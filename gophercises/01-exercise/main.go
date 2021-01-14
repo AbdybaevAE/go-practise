@@ -5,31 +5,42 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 )
 
-const defaultFile = "/Users/azamatabdybaev/repos/play/go/practise/gophercises/01-exercise/data.csv"
+const defaultFile = "data.csv"
 
 func main() {
 	filePath := flag.String("file", defaultFile, "File to import")
+	limit := flag.Int("limit", 2, "Time for quiz")
+	inpCh := make(chan string)
 	flag.Parse()
+	timer := time.NewTimer(time.Duration(*limit) * time.Second)
+	fmt.Printf("Limit is %d\n", *limit)
 	quiz := ParseCSV(*filePath)
 	quiz.init()
 	ans := startQuiz(quiz)
-	func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		for !ans.isEnded {
-			title := ans.getQuestion()
-			fmt.Println(title)
+	scanner := bufio.NewScanner(os.Stdin)
+actLabel:
+	for !ans.isEnded {
+		title := ans.getQuestion()
+		fmt.Println(title)
+		go func() {
 			scanner.Scan()
-			currAns := scanner.Text()
+			inpCh <- scanner.Text()
+		}()
+		select {
+		case <-timer.C:
+			break actLabel
+		case currAns := <-inpCh:
 			fmt.Printf("Accepted answer: %s \n", currAns)
 			ans.receiveAnswer(currAns)
 		}
-	}()
 
+	}
+	ans.endQuiz()
 	fmt.Println("Quiz was ended!")
 	fmt.Printf("Your score: %d\n", ans.score)
 	fmt.Println("Bye!")
-
 
 }
