@@ -1,0 +1,1 @@
+go build . && ./02-exercise -file=data2.yaml
