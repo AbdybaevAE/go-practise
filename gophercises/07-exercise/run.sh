@@ -1,0 +1,1 @@
+go build . && ./07-exercise
